@@ -13,7 +13,7 @@ def index():
 
 @app.route("/baker")
 def baker():
-    return render_template('baker.html')
+    return render_template('baker.html');
 
 
 if __name__ == "__main__":
