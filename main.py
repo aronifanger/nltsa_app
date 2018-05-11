@@ -6,8 +6,13 @@ from flask import request
 app = Flask(__name__)
 
 
-@app.route("/bif")
+@app.route("/")
 def index():
+    return render_template('index.html')
+
+
+@app.route("/logistic")
+def logistic():
     return render_template('bif.html')
 
 
