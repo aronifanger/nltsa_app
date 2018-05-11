@@ -2,6 +2,32 @@
 <html>
 <head>
 <meta charset="UTF-8">
+
+</head>
+<body>
+<div style="width: 100%; overflow: hidden;">
+<div id="chartContainer" style="height: 500px; max-width: 620px;float: left;"></div>
+<div id="chartContainer2" style="height: 400px; max-width: 420px;margin-left: 620px;"></div>
+
+</div>
+<!--button id="zoomPanButton">Zoom/Pan</button-->
+<label>Número de passos em x</label><input id="x_n_step" type="text" value="10">
+<br>
+<label>Número de passos em y</label><input id="y_n_step" type="text" value="10">
+<br>
+<label>Iterações</label><input id="iter" type="text" value="100">
+<br>
+
+<input id="apply_btn" type="button" value="Apply" onclick="apply()">
+
+
+<br>
+<button id="resetButton">Reset</button>
+
+
+
+<script src="/static/jquery-3.2.1.min.js"></script>
+<script src="/static/canvasjs.min.js"></script>
 <script>
 
 drange=function(start, stop, step){
@@ -17,41 +43,72 @@ drange=function(start, stop, step){
 
 }
 
-logistic_map=function(x_start,x_end,r_start,r_end,r_step){
-    v_r=drange(r_start,r_end,r_step)
-    ret=[]
-    i=0;
-    k=0
-    //console.log("v_r.length");
-    //console.log(v_r.length);
-    while (i<v_r.length){
-        r=v_r[i];
-        x=x_start;
-        s=0;
-        while (s<500){
+var x_n_step=10;
+var y_n_step=10;
+var max_iterations=100;
 
-            x=r*x*(1-x);
+click_event_handler=function(e){
 
-            if (s>200 && (x<=x_end)){
-                ret[k]={"x":r,"y":x}
-                k++;
+}
+
+ vec2xy=function (v){
+     xy=[];
+     for (var i=0;i<v[0].length;i++){
+
+         xy.push({x:parseFloat(v[0][i]),y:parseFloat(v[1][i])});
+     }
+     return xy;
+ }
+
+
+baker_map=function(x_start, x_end, y_start, y_end, x_n_step=10,y_n_step=10, max_iterations=100){
+
+    v_x_out = []
+    v_y_out = []
+
+    step=(x_end-x_start)/x_n_step
+    x_starts = drange(x_start, x_end, step);
+
+    step=(y_end-y_start)/y_n_step
+    y_starts = drange(y_start, y_end, step);
+
+
+
+    for (var j=0;j< x_starts.length;j++){
+
+
+        for (var k=0;k< y_starts.length;k++){
+            x = x_starts[j];
+        y = y_starts[k];
+        i = 0;
+        while (i < max_iterations){
+
+            v_x_out.push(x);
+            v_y_out.push(y);
+            if ( 0<=x && x< 0.5){
+                x = 2.0 * x;
+                y = y / 2.0;
             }
-            s++;
-        }
-        i++;
+            else if ( x>= 0.5 && x<1){
+                x = 2 - 2.0 * x;
+                y = 1 - y / 2.0;
+            }
+            i += 1;
+        }}
     }
-    //console.log(ret);
-    return ret;
+    return [v_x_out, v_y_out]
 }
 var chart=null;
+
+
 
 range_change_event_handler=function(e){
 
 
-    //console.log(e);
+    console.log(e);
     if (e.trigger != "reset"){
     range_change([e.axisX[0]["viewportMinimum"],e.axisX[0]["viewportMaximum"]],
-            [e.axisY[0]["viewportMinimum"],e.axisY[0]["viewportMaximum"]])
+            [e.axisY[0]["viewportMinimum"],e.axisY[0]["viewportMaximum"]],)
     }else{
         reset();
     }
@@ -60,93 +117,33 @@ range_change_event_handler=function(e){
 
 range_change=function(xlim,ylim){
 
-
-    step=(xlim[1]-xlim[0])/400.0;
     //console.log(step);
-    p=logistic_map(ylim[0],
-            ylim[1],
-            xlim[0],
-            xlim[1],step);
+    p=vec2xy(baker_map(xlim[0],
+            xlim[1],
+            ylim[0],
+            ylim[1],x_n_step,y_n_step,max_iterations));
     chart.options.data[0].dataPoints = p;
     chart.render();
 }
 
-click_event_handler=function(e){
-
-    //console.log(e);
-    cobweb_update(e.dataPoint.x,e.dataPoint.y)
-
-
-}
-var chart2=null;
-cobweb_update=function(r,x0){
-
-    chart2.options.data[0].dataPoints=create_serie_identidade(0,1,100);    
-     
-    chart2.options.data[1].dataPoints=create_serie_logistica(r,0,1,100);
-    chart2.options.data[2].dataPoints=create_serie_cobweb(r,x0);
-    chart2.render()
-}
-
-create_serie_identidade=function(x_start,x_end,n){
-    step=(x_end-x_start)/n;
-    v_x=drange(x_start,x_end,step);
-    ret=[];
-    k=0;
-    while (k<n){
-        ret[k]={"x":v_x[k],"y":v_x[k]};
-        k+=1;
-    }
-    return ret;
-}
-create_serie_logistica=function(r,x_start,x_end,n){
-    step=(x_end-x_start)/n
-    v_x=drange(x_start,x_end,step)
-    ret=[];
-    k=0;
-    while (k<n){
-        ret[k]={"x":v_x[k],"y":r*v_x[k]*(1-v_x[k])};
-        k+=1;
-    }
-    return ret;
-}
-fn_logistica=function(r,x){
-    return r*x*(1-x);
-}
-
-create_serie_cobweb=function(r,x0){
-
-    ret=[];
-    x=x0;
-    y=0;
-    i=1;
-    ret[0]={"x":x,"y":y};
-    while (i<100){
-        
-        y=fn_logistica(r,x);
-        
-        ret[i]={"x":x,"y":y};
-        x=y;
-        ret[i+1]={"x":x,"y":y};
-        i+=2;
-    }
-    return ret;
-}
 
 
 
 
 
 
- 
+
+
+
+
 
 window.onload = function () {
 
-    p=logistic_map(0.1,1,2.4,4,0.01);
+    p=[]
 
  chart = new CanvasJS.Chart("chartContainer", {
     title:{
-        text: "Bifurcation diagram"
+        text: "Baker's map"
     },
     theme: "light2",
     animationEnabled: false,
@@ -154,11 +151,13 @@ window.onload = function () {
     zoomType:"xy",
     rangeChanging:range_change_event_handler,
     axisX: {
-        title:"r"
+        title:"x",
+            maximum: 0.99999,
+            minimum: 0,
     },
     axisY:{
-        title: "x",
-            maximum: 1,
+        title: "y",
+            maximum: 0.99999,
             minimum: 0,
     },
     data: [{
@@ -174,39 +173,11 @@ window.onload = function () {
 
     }]
 });
+
+
 chart.render();
-
-
-identidade=create_serie_identidade(0,1,100);
-map_fn_serie=create_serie_logistica(2.8,0,1,100);
-cobweb_serie=create_serie_cobweb(2.8,0.63);
-
-chart2 = new CanvasJS.Chart("chartContainer2", {
-    animationEnabled: false,
-    theme: "light2",
-    title:{
-        text: "Cobweb diagram"
-    },
-    axisY:{
-        includeZero: false
-    },
-    data: [{
-         lineColor: "black",
-        type: "line",
-        dataPoints: identidade
-    },{
-         lineColor: "black",
-        type: "line",
-        dataPoints: map_fn_serie
-    },{
-         lineColor: "red",
-        type: "line",
-        dataPoints: cobweb_serie
-    },
-
-    ]
-});
-chart2.render();
+apply();
+}
 
 //Resetting the axis programatically by setting viewportMinimum and viewportMaximum to null
 
@@ -219,33 +190,46 @@ reset=function(){
     chart.axisY[0].set("viewportMaximum", null, false);
     //range_change([chart.axisX[0]["viewportMinimum"],chart.axisX[0]["viewportMaximum"]],
       //      [chart.axisY[0]["viewportMinimum"],chart.axisY[0]["viewportMaximum"]])
-    p=logistic_map(0.1,
-            1,
-            2.4,
-            4,0.01);
+
+      p=vec2xy(baker_map(0.01,
+            0.99999,
+            0.01,0.99999,10,10,100));
     chart.options.data[0].dataPoints = p;
     chart.render();
 
 }
+
+apply=function(){
+
+    //range_change([chart.axisX[0]["viewportMinimum"],chart.axisX[0]["viewportMaximum"]],
+      //      [chart.axisY[0]["viewportMinimum"],chart.axisY[0]["viewportMaximum"]])
+
+
+      x_n_step=parseInt($("#x_n_step").val());
+      y_n_step=parseInt($("#y_n_step").val());
+      max_iterations=parseInt($("#iter").val());
+
+      console.log(x_n_step);
+      console.log(y_n_step);
+      console.log(max_iterations);
+
+
+      p=vec2xy(baker_map(chart.axisX[0]["viewportMinimum"],
+              chart.axisX[0]["viewportMaximum"],
+            chart.axisY[0]["viewportMinimum"],
+            chart.axisY[0]["viewportMaximum"],x_n_step,y_n_step,max_iterations));
+    chart.options.data[0].dataPoints = p;
+    chart.render();
+
+}
+
 $("#zoomPanButton").click(function(){
     $(".canvasjs-chart-toolbar button:eq(0)").click();
     return false;
 });
 $("#resetButton").click(reset);
 
-}
+
 </script>
-</head>
-<body>
-<div style="width: 100%; overflow: hidden;">
-<div id="chartContainer" style="height: 500px; max-width: 620px;float: left;"></div>
-<div id="chartContainer2" style="height: 400px; max-width: 420px;margin-left: 620px;"></div>
-
-</div>
-<!--button id="zoomPanButton">Zoom/Pan</button-->
-<button id="resetButton">Reset</button>
-<script src="/static/jquery-3.2.1.min.js"></script>
-
-<script src="/static/canvasjs.min.js"></script>
 </body>
 </html>
