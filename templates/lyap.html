@@ -1,0 +1,457 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<meta charset="UTF-8">
+<script>
+
+drange=function(start, stop, step){
+
+    i=1;
+    ret=[];
+    ret[0]=start;
+    while (ret[i-1]<stop){
+        ret[i]=ret[i-1]+step;
+        i++;
+    }
+    return ret;
+
+}
+
+logistic_map=function(x_start,x_end,r_start,r_end,r_step){
+    v_r=drange(r_start,r_end,r_step)
+    ret=[]
+    i=0;
+    k=0
+    //console.log("v_r.length");
+    //console.log(v_r.length);
+    while (i<v_r.length){
+        r=v_r[i];
+        x=x_start;
+        s=0;
+        while (s<500){
+
+            x=r*x*(1-x);
+
+            if (s>200 && (x<=x_end)){
+                ret[k]={"x":r,"y":x}
+                k++;
+            }
+            s++;
+        }
+        i++;
+    }
+    //console.log(ret);
+    return ret;
+}
+
+/*
+
+      DO MI=2.8D0,4.0D0,1.D-3
+      X = 0.3D0
+        L = 0.D0
+
+C 7  iterando o mapa logistico
+
+        DO N=1,1000
+        X = MI*X*(1.D0-X)
+
+C 8  calculando os valores de L
+
+          L=L+DLOG(MI*DABS(1.D0-2.D0*X))/1000.D0
+        ENDDO
+        WRITE(1,*)MI,L
+      ENDDO
+
+*/
+
+lyapunov=function(x_start,x_end,r_start,r_end,r_step){
+    v_r=drange(r_start,r_end,r_step)
+    ret=[]
+    i=0;
+    k=0
+    //console.log("v_r.length");
+    //console.log(v_r.length);
+    while (i<v_r.length){
+        r=v_r[i];
+        x=x_start;
+        s=0;
+        L=0
+        while (s<1000){
+            x=r*x*(1-x);
+            //L=L+Math.log(r*Math.abs(1-(2*x))/1000)
+            L+=Math.log(Math.abs(r - 2 * r * x))/1000    
+            s++;
+        }
+        ret[i]={"x":r,"y":L}
+        i++;
+    }
+    //console.log(ret);
+    return ret;
+}
+
+
+var chart=null;
+
+
+range_change_event_handler=function(e){
+
+
+    //console.log(e);
+    if (e.trigger != "reset"){
+    range_change([e.axisX[0]["viewportMinimum"],e.axisX[0]["viewportMaximum"]],
+            [e.axisY[0]["viewportMinimum"],e.axisY[0]["viewportMaximum"]])
+    }else{
+        reset();
+    }
+
+}
+
+range_change=function(xlim,ylim){
+
+
+    step=(xlim[1]-xlim[0])/400.0;
+    //console.log(step);
+    p=logistic_map(ylim[0],
+            ylim[1],
+            xlim[0],
+            xlim[1],step);
+    chart.options.data[0].dataPoints = p;
+    chart.render();
+}
+
+click_event_handler=function(e){
+
+    //console.log(e);
+    cobweb_update(e.dataPoint.x,e.dataPoint.y)
+
+
+}
+var chart2=null;
+var chart4=null;
+
+cobweb_update=function(r,x0){
+
+    chart2.options.data[0].dataPoints=create_serie_identidade(0,1,100);    
+     
+    chart2.options.data[1].dataPoints=create_serie_logistica(r,0,1,100);
+    chart2.options.data[2].dataPoints=create_serie_cobweb(r,x0);
+    intera=create_serie_intera(r,x0);
+    chart4.options.data[0].dataPoints=intera;
+    chart4.options.data[1].dataPoints=intera;
+
+    chart2.render()
+    chart4.render()
+}
+
+create_serie_identidade=function(x_start,x_end,n){
+    step=(x_end-x_start)/n;
+    v_x=drange(x_start,x_end,step);
+    ret=[];
+    k=0;
+    while (k<n){
+        ret[k]={"x":v_x[k],"y":v_x[k]};
+        k+=1;
+    }
+    return ret;
+}
+create_serie_logistica=function(r,x_start,x_end,n){
+    step=(x_end-x_start)/n
+    v_x=drange(x_start,x_end,step)
+    ret=[];
+    k=0;
+    while (k<n){
+        ret[k]={"x":v_x[k],"y":r*v_x[k]*(1-v_x[k])};
+        k+=1;
+    }
+    return ret;
+}
+fn_logistica=function(r,x){
+    return r*x*(1-x);
+}
+
+create_serie_cobweb=function(r,x0){
+
+    ret=[];
+    x=x0;
+    y=0;
+    i=1;
+    ret[0]={"x":x,"y":y};
+    while (i<100){
+        
+        y=fn_logistica(r,x);
+        
+        ret[i]={"x":x,"y":y};
+        x=y;
+        ret[i+1]={"x":x,"y":y};
+        i+=2;
+    }
+    return ret;
+}
+
+
+create_serie_intera=function(r,x0){
+
+    ret=[];
+    x=x0;
+    y=0;
+    i=0;
+    while (i<40){
+        y=fn_logistica(r,x);
+        ret[i]={"x":i,"y":y};
+        x=y;
+        i+=1;
+    }
+    return ret;
+}
+
+
+
+
+
+
+
+
+ 
+
+window.onload = function () {
+
+    p=logistic_map(0.1,1,2.4,4,0.01);
+
+ chart = new CanvasJS.Chart("chartContainer", {
+    title:{
+        text: "Bifurcation diagram"
+    },
+    theme: "light2",
+    animationEnabled: false,
+    zoomEnabled: true,
+    zoomType:"xy",
+    rangeChanging:range_change_event_handler,
+    axisX: {
+        title:"r"
+    },
+    axisY:{
+        title: "x",
+            maximum: 1,
+            minimum: 0,
+    },
+    data: [{
+        mouseover:click_event_handler,
+        click:click_event_handler,
+        markerType:"circle",
+        markerSize:1,
+        markerColor: "#000080",
+        type: "scatter",
+        toolTipContent:null,
+        //toolTipContent: "<b>r: </b>{x}<br/><b>x: </b>{y}",
+        dataPoints: p
+
+    }]
+
+
+
+});
+chart.render();
+
+
+function isBigEnough(value) {
+  return value.y > 0;
+}
+
+function notTsBigEnough(value) {
+  return value.y < 0;
+}
+
+p2=lyapunov(0.1,1,2.4,4,0.0001);
+
+var newlist0 = p2.filter(isBigEnough);
+var newlist1 = p2.filter(notTsBigEnough);
+
+
+ chart3 = new CanvasJS.Chart("chartContainer3", {
+    title:{
+        text: "Expoent Lyapunov Map"
+    },
+    theme: "light2",
+    animationEnabled: false,
+    zoomEnabled: true,
+    zoomType:"xy",
+    axisX: {
+        title:"coefficient"
+    },
+    axisY:{
+        title: "Expoent Lyapunov",
+            maximum: 1,
+            minimum: -2,
+            lineThickness: 0
+    },
+    data: [
+    {
+        color: "black",
+        markerSize:2,
+        type: "scatter",
+        toolTipContent:null,
+        dataPoints: newlist1
+
+    },
+    {
+        color: "red",
+        markerSize:2,
+        type: "scatter",
+        toolTipContent:null,
+        dataPoints: newlist0
+
+    },
+    
+
+    ]
+
+
+
+});
+chart3.render();
+
+
+
+
+
+
+
+
+
+
+
+
+identidade=create_serie_identidade(0,1,100);
+map_fn_serie=create_serie_logistica(2.8,0,1,100);
+cobweb_serie=create_serie_cobweb(2.8,0.63);
+serie_intera=create_serie_intera(2.8,0.63);
+
+
+chart2 = new CanvasJS.Chart("chartContainer2", {
+    animationEnabled: false,
+    theme: "light2",
+    title:{
+        text: "Cobweb diagram"
+    },
+    axisY:{
+        includeZero: false
+    },
+    data: [{
+         lineColor: "black",
+        type: "line",
+        dataPoints: identidade
+    },{
+         lineColor: "black",
+        type: "line",
+        dataPoints: map_fn_serie
+    },{
+         lineColor: "red",
+        type: "line",
+        dataPoints: cobweb_serie
+    },
+
+    ]
+});
+chart2.render();
+
+
+
+chart4 = new CanvasJS.Chart("chartContainer4", {
+    animationEnabled: false,
+    theme: "light2",
+    title:{
+        text: "Map of Interactions"
+    },
+
+    axisY:{
+        title: "x",
+            maximum: 1,
+            minimum: 0,
+    },
+    data: [{
+         lineColor: "red",
+        type: "line",
+        dataPoints: serie_intera
+    },
+    {
+         lineColor: "black",
+        type: "scatter",
+        dataPoints: serie_intera
+    }
+    
+
+    ]
+});
+chart4.render();
+
+//Resetting the axis programatically by setting viewportMinimum and viewportMaximum to null
+
+reset=function(){
+    chart.axisX[0].set("viewportMinimum", null, false);
+    chart.axisX[0].set("viewportMaximum", null, false);
+
+
+    chart.axisY[0].set("viewportMinimum", null, false);
+    chart.axisY[0].set("viewportMaximum", null, false);
+    //range_change([chart.axisX[0]["viewportMinimum"],chart.axisX[0]["viewportMaximum"]],
+      //      [chart.axisY[0]["viewportMinimum"],chart.axisY[0]["viewportMaximum"]])
+    p=logistic_map(0.1,
+            1,
+            2.4,
+            4,0.01);
+    chart.options.data[0].dataPoints = p;
+    chart.render();
+
+}
+$("#zoomPanButton").click(function(){
+    $(".canvasjs-chart-toolbar button:eq(0)").click();
+    return false;
+});
+$("#resetButton").click(reset);
+
+
+jQuery("#chartContainer").last().on("mousemove", 
+    function(e){
+        var parentOffset = $(this).parent().offset();
+        var relX = e.pageX - parentOffset.left;
+        var relY = e.pageY - parentOffset.top
+        var xValue = chart.axisX[0].convertPixelToValue(relX).toFixed(4);
+        var yValue = chart.axisY[0].convertPixelToValue(relY).toFixed(4);
+        document.getElementById("displayPixel").innerHTML = "Value on Axis Scale: { " + xValue + ", " + yValue + "}";   
+    });
+
+jQuery("#chartContainer").last().on("click", 
+    function(e){
+        var parentOffset = $(this).parent().offset();
+        var relX = e.pageX - parentOffset.left;
+        var relY = e.pageY - parentOffset.top
+        var xValue = chart.axisX[0].convertPixelToValue(relX).toFixed(4);
+        var yValue = chart.axisY[0].convertPixelToValue(relY).toFixed(4);
+        cobweb_update(xValue,yValue);
+    });
+
+}
+
+
+</script>
+</head>
+<body>
+<div style="width: 100%; overflow: hidden;">
+<div id="chartContainer" style="height: 500px; max-width: 620px;float: left;"></div>
+<div id="chartContainer2" style="height: 400px; max-width: 420px;margin-left: 620px;"></div>
+
+</div>
+    <div id="displayPixel"></div>
+
+<div style="width: 100%; overflow: hidden;">
+<div id="chartContainer3" style="height: 500px; max-width: 620px;float: left;"></div>
+<div id="chartContainer4" style="height: 400px; max-width: 420px;margin-left: 620px;"></div>
+
+</div>
+<!--button id="zoomPanButton">Zoom/Pan</button-->
+<button id="resetButton">Reset</button>
+<script src="/static/jquery-3.2.1.min.js"></script>
+
+<script src="/static/canvasjs.min.js"></script>
+</body>
+</html>
