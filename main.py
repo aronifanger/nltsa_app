@@ -15,6 +15,9 @@ def index():
 def logistic():
     return render_template('bif.html')
 
+@app.route("/lyap")
+def lyap():
+    return render_template('lyap.html')
 
 @app.route("/baker")
 def baker():
