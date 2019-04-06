@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset=utf-8 />
+  <title>Estica e dobra</title>
+</head>
+<body>
+
+  <button onclick="window.app.stretch();window.app.fold();"> Estica e dobra</button>
+  
+
+  <div>
+    <canvas id="DemoCanvas" width="1000" height="1000"></canvas>  
+  </div>
+  <script>  
+
+    class Mass {
+      constructor(canvas,startPoint,width){
+
+        this.canvas=canvas;
+        this.startPoint =startPoint;
+        this.context = this.canvas.getContext('2d');
+        this.length=400;
+        this.width=100;
+        this.nSegment=1;
+      }
+
+      _draw_segment(startPoint,length,width){
+        var context = this.context;
+      // Reset the current path
+      context.beginPath(); 
+      // Staring point (10,45)
+      context.moveTo(startPoint.x,startPoint.y);
+      // End point (180,47)
+      context.lineTo(startPoint.x,startPoint.y-length);
+      
+      context.moveTo(startPoint.x+width,startPoint.y-length);
+      context.lineTo(startPoint.x+width,startPoint.y);
+      context.stroke();
+
+
+    }
+
+    _draw_bend(bendPoint,bendHorizontal,bendVertical,raioInterno,width){
+      var context = this.context;
+
+
+
+      context.beginPath(); 
+
+
+    if (bendHorizontal=="direita" && bendVertical=="up"){ 
+
+
+            context.arc(bendPoint.x+raioInterno, bendPoint.y, raioInterno,  Math.PI,0);
+            context.stroke();
+            context.beginPath(); 
+            context.arc(bendPoint.x+raioInterno, bendPoint.y, width+raioInterno,  Math.PI,0);
+
+    }
+
+    if (bendHorizontal=="esquerda" && bendVertical=="down"){
+            context.arc(bendPoint.x-raioInterno, bendPoint.y, raioInterno,  Math.PI,0,true);
+            context.stroke();
+            context.beginPath(); 
+            context.arc(bendPoint.x-raioInterno, bendPoint.y, (width+raioInterno),  Math.PI,0,true );
+    }
+
+    if (bendHorizontal=="esquerda" && bendVertical=="up"){
+            console.log("esquerda up");
+            context.arc(bendPoint.x-raioInterno, bendPoint.y, raioInterno,  Math.PI,0);
+            context.stroke();
+            context.beginPath(); 
+            context.arc(bendPoint.x-raioInterno, bendPoint.y, (width+raioInterno),  Math.PI,0);
+    }
+
+    if (bendHorizontal=="direita" && bendVertical=="down"){
+
+
+            context.arc(bendPoint.x+raioInterno, bendPoint.y, raioInterno,  Math.PI,0,true);
+            context.stroke();
+            context.beginPath(); 
+            context.arc(bendPoint.x+raioInterno, bendPoint.y, width+raioInterno,  Math.PI,0,true);
+
+    }
+
+
+
+      
+
+      context.stroke();
+
+
+    }
+
+    _draw_stub(center,radius,side){
+
+      var context = this.context;
+      context.beginPath(); 
+      if (side=="up"){
+        context.arc(center.x, center.y, radius, 0,  Math.PI);
+
+      }else{
+
+
+        context.arc(center.x, center.y, radius,   Math.PI,0);
+
+      }
+      context.stroke();
+
+    }
+
+
+    draw(){
+      if (this.canvas.getContext) 
+      {
+
+        var context= this.context;
+        var startPoint = this.startPoint;
+        var width = this.width;
+        var length = this.length;
+        var segLength = length/this.nSegment;
+
+
+
+        var currBendHorizontal="direita";
+        var currBendVertical="up";
+
+        var lastBendHorizontal=currBendHorizontal;
+        var lastBendVertical=currBendVertical;
+
+        var i=0;
+
+        this._draw_stub({x:startPoint.x+width/2,y:startPoint.y},width/2,"up");
+        var reverse=1;
+        var currentPoint={x:startPoint.x,y:startPoint.y};
+        var gap=width/(this.nSegment*1.1);
+        gap=0;
+        var raioExternoLongo=(width*(this.nSegment-1) +gap*(this.nSegment-1))/2 ;
+        var raioInterno=0;  
+        var signal=1;
+        while (i< this.nSegment){
+            
+            var bendPoint=null;
+            
+            if ( currBendVertical == "up"){
+
+                if (currBendHorizontal=="direita"){
+                  bendPoint={x:currentPoint.x+width,y:currentPoint.y-segLength};
+
+                  if (i>0){
+                      currentPoint.x=currentPoint.x+2*raioInterno;
+                      currentPoint.y=currentPoint.y+segLength; 
+
+                      bendPoint={x:currentPoint.x+width,y:currentPoint.y-segLength};
+                      signal=1;
+                  }
+                  console.log("bend - up direita");
+                }else{
+
+                    if (currBendHorizontal=="esquerda"){
+                      
+                      currentPoint.x=currentPoint.x-2*(raioInterno+width) ;
+                      currentPoint.y=currentPoint.y+segLength;
+                      bendPoint={x:currentPoint.x,y:currentPoint.y-segLength};
+                      
+                      signal=1;
+                    }
+                }
+
+
+
+                raioInterno=Math.max(0,raioExternoLongo-((i+1)/2)*width-(Math.max(i-1,0))*gap);
+                // raioInterno=raioExternoLongo-width/2;
+            }else{
+
+
+                if ( currBendVertical == "down"){
+                    if (currBendHorizontal=="direita"){
+                      signal=-1;
+                      currentPoint.x=currentPoint.x-2*raioInterno;
+                      currentPoint.y=currentPoint.y-segLength;
+
+                      bendPoint={x:currentPoint.x,y:currentPoint.y+segLength};
+
+
+
+                    }else{
+
+                        if (currBendHorizontal=="esquerda"){
+                          console.log("down esquerda--");
+                          signal=-1;
+                          currentPoint.x=currentPoint.x+2*(raioInterno+width);
+                          currentPoint.y=currentPoint.y-segLength;
+                          bendPoint={x:currentPoint.x-width,y:currentPoint.y+segLength};
+
+
+
+                        }
+                    }
+                    raioInterno=(gap/2);
+                }
+            }
+
+          console.log(currentPoint.x+" "+currentPoint.y+" "+segLength+" "+ width);
+          this._draw_segment(currentPoint, signal*segLength,signal*width);
+
+           
+
+ 
+
+
+          if (i<(this.nSegment-1)){
+            this._draw_bend(bendPoint,currBendHorizontal, currBendVertical,raioInterno,width);
+          
+ 
+            lastBendHorizontal=currBendHorizontal;
+            lastBendVertical=currBendVertical;
+
+            if (currBendHorizontal=="direita" && currBendVertical=="up"){
+
+              currBendHorizontal="esquerda";
+              currBendVertical = "down";
+            }else{
+              if (currBendHorizontal=="esquerda" && currBendVertical=="down"){
+                currBendHorizontal="esquerda";
+                currBendVertical = "up";
+              }else{
+                  if (currBendHorizontal=="esquerda" && currBendVertical=="up"){
+                    currBendHorizontal="direita";
+                    currBendVertical = "down";
+                  } else{
+
+                    if (currBendHorizontal=="direita" && currBendVertical=="down"){
+                    currBendHorizontal="direita";
+                    currBendVertical = "up";
+                  }
+
+                  } 
+              }
+            }
+
+
+
+
+
+
+          }else{
+            if (this.nSegment%2==0){
+              this._draw_stub({x:currentPoint.x+reverse*width/2,y:currentPoint.y-reverse*segLength},width/2,"up");
+            }else{
+              this._draw_stub({x:currentPoint.x+reverse*width/2,y:currentPoint.y-reverse*segLength},width/2,"down");
+            }
+          }
+
+
+          reverse*=-1;
+          i++;
+          
+
+
+
+        }
+
+
+
+
+      // this._draw_stub({x:startPoint.x+width/2,y:startPoint.y-length},width/2,"down");
+
+
+      // if (this.nSegment>1){
+
+      // }
+      
+      
+      
+      
+
+    }
+
+  }
+
+
+  stretch(lengthTimes){
+    this.length=this.length*lengthTimes;
+    this.width=this.width/(lengthTimes);
+
+  }
+
+  fold(){
+
+    this.nSegment*=2;
+
+  }
+
+}
+
+class App {
+  init(){
+
+    this.canvas = document.getElementById('DemoCanvas');
+
+    this.context = this.canvas.getContext('2d');
+    //Always check for properties and methods, to make sure your code doesn't break in other browsers.
+    var center={x:500,y:900};
+
+    this.mass=new Mass(this.canvas,center);
+    this.mass.draw();
+
+
+
+
+  }
+
+  stretch(){
+    this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    this.mass.stretch(2);
+    this.mass.draw();
+
+  }
+
+  fold(){
+    this.mass.fold(2);
+    this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    this.mass.draw();
+
+  }
+
+
+}
+
+
+window.app=new App();
+app.init();
+
+
+
+</script> 
+
+
+</body>
+</html>
