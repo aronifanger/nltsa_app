@@ -11,7 +11,7 @@
   </div>
 
   <div>
-    <canvas id="DemoCanvas" width="1000" height="1000"></canvas>  
+    <canvas id="DemoCanvas" width="1000" height="1200"></canvas>  
   </div>
   <script>  
 
@@ -21,8 +21,8 @@
         this.canvas=canvas;
         this.startPoint =startPoint;
         this.context = this.canvas.getContext('2d');
-        this.length=400;
-        this.width=100;
+        this.length=600;
+        this.width=600;
         this.nSegment=1;
       }
 
@@ -303,7 +303,7 @@ class App {
 
     this.context = this.canvas.getContext('2d');
     //Always check for properties and methods, to make sure your code doesn't break in other browsers.
-    var center={x:500,y:900};
+    var center={x:200,y:900};
 
     this.mass=new Mass(this.canvas,center);
     this.mass.draw();
