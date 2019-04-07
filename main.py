@@ -23,6 +23,10 @@ def lyap():
 def baker():
     return render_template('baker.html');
 
+@app.route("/esticadobra")
+def esticadobra():
+    return render_template("esticadobra.html")
+
 
 if __name__ == "__main__":
     app.config['TEMPLATES_AUTO_RELOAD'] = True
