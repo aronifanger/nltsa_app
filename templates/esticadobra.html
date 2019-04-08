@@ -7,23 +7,30 @@
 <body>
 
 
+<div style=" margin-top:10px;margin-left:50px;margin-bottom:50px;">
+  <label for="height">Heigth</label><input id="heigth" type="range" min="100" max="1200" step="10" value="400" style="padding:20px 20px 20px 20px; font-size: large; " onchange="window.app.setLength(this.value)"</input>
+  <label for="width">Width</label><input id="width" type="range" min="50" value="400" max="600" step="10" style="padding:20px 20px 20px 20px; font-size: large; " onchange="window.app.setWidth(this.value)"</input>
+
+
+  <button style="padding:20px 20px 20px 20px; font-size: large; " onclick="window.app.stretch();window.app.fold();"> Estica e dobra</button>
+  </div>
 
   <div>
     <canvas id="DemoCanvas" width="1000" height="1200"></canvas>  
   </div>
-<div style=" margin-top:10px;margin-left:750px;margin-bottom:50px;">
-  <button style="padding:20px 20px 20px 20px; font-size: large; " onclick="window.app.stretch();window.app.fold();"> Estica e dobra</button>
-  </div>
+
   <script>  
 
+
     class Mass {
-      constructor(canvas,startPoint,width){
+      constructor(canvas,length,width){
 
         this.canvas=canvas;
-        this.startPoint =startPoint;
+        
         this.context = this.canvas.getContext('2d');
-        this.length=600;
-        this.width=600;
+        this.length=length;
+        this.width=width;
+        this.startPoint ={x:25,y:this.length+width/2};
         this.nSegment=1;
       }
 
@@ -306,7 +313,7 @@ class App {
     //Always check for properties and methods, to make sure your code doesn't break in other browsers.
     var center={x:200,y:900};
 
-    this.mass=new Mass(this.canvas,center);
+    this.mass=new Mass(this.canvas,400,400);
     this.mass.draw();
 
 
@@ -314,6 +321,11 @@ class App {
 
   }
 
+  clear(){
+
+        this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    
+  }
   stretch(){
     this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
     this.mass.stretch(2);
@@ -326,6 +338,30 @@ class App {
     this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
     this.mass.draw();
 
+  }
+  setWidth(value){
+
+    this.clear();
+    this.mass.width=parseInt(value)
+    this.mass.startPoint.x=25;
+    this.mass.startPoint.y=parseInt(this.mass.length)+this.mass.width/2;
+    console.log(" \n");
+    console.log(value);
+    this.mass.draw();
+  }
+
+  setLength(value){
+
+
+    this.clear()
+
+    this.mass.length=parseInt(value,10);
+    this.mass.startPoint.y=parseInt(this.mass.length)+this.mass.width/2;
+    
+
+    console.log(" \n");
+    console.log(value);
+    this.mass.draw();
   }
 
 
